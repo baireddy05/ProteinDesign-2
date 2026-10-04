@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pt
+*.pth
+data/raw/
+data/processed/
+checkpoints/
+*.log
+.ipynb_checkpoints/
+venv*/
+venv_protein/
+venv310/
+venv311/

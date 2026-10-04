@@ -1,0 +1,19 @@
+model:
+  dim: 128
+  blocks: 4
+train:
+  lr: 0.001
+  max_steps: 60000
+  mask_frac: 0.5
+  accum: 4           # 4 x 1 graph, dim128 on T4
+  amp: true
+  log_every: 50
+  save_every: 1000
+  ckpt_dir: /content/drive/MyDrive/proteinsolver/ckpt/protein_t4
+  cache_dir: /content/drive/MyDrive/proteinsolver/data/graphs
+  min_len: 40
+  max_len: 200
+  max_chains: 5000
+seed: 0
+num_threads: 4
+use_cuda: true

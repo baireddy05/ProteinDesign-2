@@ -1,0 +1,19 @@
+model:
+  dim: 64
+  blocks: 3
+train:
+  lr: 0.001
+  max_steps: 10000
+  mask_frac: 0.5
+  accum: 8          # grad accumulate over 8 graphs ~= batch 8
+  amp: false
+  log_every: 20
+  save_every: 100
+  ckpt_dir: checkpoints/protein_cpu
+  cache_dir: data/processed/graphs
+  min_len: 40
+  max_len: 200
+  max_chains: 300
+seed: 0
+num_threads: 12
+use_cuda: false
