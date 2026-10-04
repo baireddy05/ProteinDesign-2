@@ -40,7 +40,9 @@ class ECABlock(nn.Module):
         he = self.h(e_new)  # [E, D]
         # aggregate to source nodes (row). Since graph is bidirectional,
         # this sums all incident edges per node.
-        agg = torch.zeros_like(v)
+        # NOTE: under AMP autocast he can be half while v stays float
+        # (embedding outputs are not autocast) -> match he's dtype.
+        agg = torch.zeros(v.size(0), he.size(1), device=v.device, dtype=he.dtype)
         agg.index_add_(0, row, he)
         # normalize by degree to keep scale stable (mean-ish, keeps residual safe)
         deg = torch.zeros(v.size(0), 1, device=v.device)
