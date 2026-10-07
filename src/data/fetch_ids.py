@@ -5,6 +5,7 @@ Usage:
   .\\venv311\\Scripts\\python.exe -m src.data.fetch_ids --out data/raw/ids.txt --rows 500
 """
 import argparse
+import os
 
 # Classic small (<150 res) well-behaved domains; doubles as offline fallback.
 FALLBACK = """1UBQ 1CRN 1VII 2GB1 1PGB 1SHG 1TEN 1FNA 1MJC 2ACY 1APS 1RIS 1CSP
@@ -53,6 +54,7 @@ def main():
         print(f"RCSB query failed ({e}); using fallback list")
         ids = []
     ids = list(dict.fromkeys([i.upper() for i in ids] + FALLBACK))
+    os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w") as f:
         f.write("\n".join(ids) + "\n")
     print(f"wrote {len(ids)} ids -> {args.out}")
