@@ -54,12 +54,13 @@ def main():
     ap.add_argument("--config", required=True)
     ap.add_argument("--num", type=int, default=200)
     ap.add_argument("--inc_num", type=int, default=50)
+    ap.add_argument("--ckpt", default=None)
     args = ap.parse_args()
     cfg = load_cfg(args.config)
     device = torch.device("cuda" if torch.cuda.is_available() and cfg.get("use_cuda", True) else "cpu")
     model = ProteinSolver(num_node_classes=10, edge_in_dim=1,
                           dim=cfg["model"]["dim"], num_blocks=cfg["model"]["blocks"]).to(device)
-    ckpt = cfg["train"]["ckpt_dir"] + "/last.pt"
+    ckpt = args.ckpt or cfg["train"]["ckpt_dir"] + "/last.pt"
     d = torch.load(ckpt, map_location=device)
     model.load_state_dict(d["model"])
     model.eval()
