@@ -15,6 +15,7 @@ def main():
     ap.add_argument("--config", required=True)
     ap.add_argument("--ckpt", default=None)
     ap.add_argument("--cache_dir", default=None)
+    ap.add_argument("--pairs", default=None)
     args = ap.parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
@@ -27,9 +28,15 @@ def main():
     model.load_state_dict(d["model"]); model.eval()
     print(f"loaded {ckpt} @ step {d['step']}")
 
-    ds = ProteinGraphDataset(args.cache_dir or cfg["train"]["cache_dir"],
-                             mask_frac=cfg["train"].get("mask_frac", 0.5),
-                             train=False)  # holdout via default 0.1
+    if args.pairs:
+        from src.data.homolog_dataset import HomologPairDataset
+        ds = HomologPairDataset(args.pairs, args.cache_dir or cfg["train"]["cache_dir"],
+                                mask_frac=cfg["train"].get("mask_frac", 0.5),
+                                train=False)
+    else:
+        ds = ProteinGraphDataset(args.cache_dir or cfg["train"]["cache_dir"],
+                                 mask_frac=cfg["train"].get("mask_frac", 0.5),
+                                 train=False)  # holdout via default 0.1
     tot_c = tot = 0
     with torch.no_grad():
         for i in range(len(ds)):
@@ -37,7 +44,7 @@ def main():
             logits = model(it["x"].to(device), it["edge_index"].to(device),
                            it["edge_attr"].to(device))
             pred = logits.argmax(-1).cpu()
-            mk = it["x"] == 20
+            mk = (it.get("loss_mask", it["x"] == 20)).bool()
             tot_c += (pred[mk] == it["y"][mk]).sum().item()
             tot += mk.sum().item()
     print(f"holdout one-shot recon acc: {tot_c/tot*100:.1f}% on {len(ds)} graphs ({tot} masked cells)")

@@ -54,14 +54,14 @@ class HomologPairDataset(Dataset):
         tkey, hseq = self.items[idx % len(self.items)]
         g = self._graph(tkey)
         n = g["x"].size(0)
-        valid = [i for i, a in enumerate(hseq) if a != "-"]
+        valid = [i for i, a in enumerate(hseq) if a in AA2I]
         k = max(1, int(len(valid) * self.mask_frac))
         midx = set(self.rng.sample(valid, k))
         x = torch.empty(n, dtype=torch.long)
         y = torch.empty(n, dtype=torch.long)
         for i, a in enumerate(hseq):
-            if a == "-":
-                x[i] = MASK  # never predicted; masked so net ignores identity
+            if a not in AA2I:
+                x[i] = MASK  # gap/unknown: never predicted
                 y[i] = 0
             else:
                 y[i] = AA2I[a]
