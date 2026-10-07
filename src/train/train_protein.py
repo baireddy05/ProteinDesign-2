@@ -8,11 +8,15 @@ import torch
 import torch.nn as nn
 from src.model.proteinsolver import ProteinSolver
 from src.data.protein_dataset import ProteinGraphDataset
+from src.data.homolog_dataset import HomologPairDataset
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
+    ap.add_argument("--pairs", default=None,
+                    help="homolog JSONL; uses HomologPairDataset + loss_mask")
+    ap.add_argument("--ckpt_dir", default=None)
     args = ap.parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
@@ -28,7 +32,7 @@ def main():
     use_amp = device.type == "cuda" and tcfg.get("amp", False)
     scaler = torch.amp.GradScaler("cuda", enabled=use_amp)
     ce = nn.CrossEntropyLoss()
-    ckpt_dir = tcfg["ckpt_dir"]
+    ckpt_dir = args.ckpt_dir or tcfg["ckpt_dir"]
     os.makedirs(ckpt_dir, exist_ok=True)
     last = os.path.join(ckpt_dir, "last.pt")
     step = 0
@@ -37,8 +41,12 @@ def main():
         model.load_state_dict(d["model"]); opt.load_state_dict(d["opt"]); step = d["step"]
         print(f"resumed at step {step}", flush=True)
 
-    ds = ProteinGraphDataset(tcfg["cache_dir"], mask_frac=tcfg.get("mask_frac", 0.5))
-    print(f"train graphs: {len(ds)}", flush=True)
+    if args.pairs:
+        ds = HomologPairDataset(args.pairs, tcfg["cache_dir"],
+                                mask_frac=tcfg.get("mask_frac", 0.5))
+    else:
+        ds = ProteinGraphDataset(tcfg["cache_dir"], mask_frac=tcfg.get("mask_frac", 0.5))
+    print(f"train items: {len(ds)}", flush=True)
     max_steps, accum = tcfg["max_steps"], tcfg.get("accum", 8)
     model.train()
     t0 = time.time()
@@ -52,7 +60,8 @@ def main():
         logits = None
         with torch.amp.autocast("cuda", enabled=use_amp):
             logits = model(x, ei, ea)
-            m = x == 20
+            lm = item.get("loss_mask", None)
+            m = lm.to(device) if lm is not None else (x == 20)
             loss = ce(logits[m], y[m]) / accum
         scaler.scale(loss).backward()
         if (step + 1) % accum == 0:
