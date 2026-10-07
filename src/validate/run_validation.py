@@ -46,9 +46,13 @@ def main():
     ap.add_argument("--num", type=int, default=3)
     ap.add_argument("--temperature", type=float, default=1.0)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--ckpt", default=None)
     args = ap.parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
+    if args.ckpt:
+        import os
+        cfg["train"]["ckpt_dir"] = os.path.dirname(args.ckpt) or "."
     device = torch.device("cuda" if torch.cuda.is_available() and cfg.get("use_cuda", True) else "cpu")
     m = cfg["model"]
     model = ProteinSolver(num_node_classes=21, edge_in_dim=2,

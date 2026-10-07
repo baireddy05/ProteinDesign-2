@@ -13,6 +13,7 @@ from src.data.protein_dataset import ProteinGraphDataset
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
+    ap.add_argument("--ckpt", default=None)
     args = ap.parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
@@ -20,7 +21,7 @@ def main():
     m = cfg["model"]
     model = ProteinSolver(num_node_classes=21, edge_in_dim=2,
                           dim=m["dim"], num_blocks=m["blocks"]).to(device)
-    ckpt = cfg["train"]["ckpt_dir"] + "/last.pt"
+    ckpt = args.ckpt or cfg["train"]["ckpt_dir"] + "/last.pt"
     d = torch.load(ckpt, map_location=device)
     model.load_state_dict(d["model"]); model.eval()
     print(f"loaded {ckpt} @ step {d['step']}")
