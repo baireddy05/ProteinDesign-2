@@ -14,6 +14,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     ap.add_argument("--ckpt", default=None)
+    ap.add_argument("--cache_dir", default=None)
     args = ap.parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
@@ -26,7 +27,7 @@ def main():
     model.load_state_dict(d["model"]); model.eval()
     print(f"loaded {ckpt} @ step {d['step']}")
 
-    ds = ProteinGraphDataset(cfg["train"]["cache_dir"],
+    ds = ProteinGraphDataset(args.cache_dir or cfg["train"]["cache_dir"],
                              mask_frac=cfg["train"].get("mask_frac", 0.5),
                              train=False)  # holdout via default 0.1
     tot_c = tot = 0
